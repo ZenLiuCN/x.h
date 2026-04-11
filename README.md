@@ -108,8 +108,8 @@ const A = (n, fn) => Array(n).fill(0).map((_, i) => fn(i)),V = "__VA_ARGS__", N 
 the copy the output, or just to parse in header file.
 # Idea comes
 inspired when coding a little project.
-# example
-```c
+# Example
+```C
 #define SQL_READ_RAW(x) x              
 #define SQL_READ_JSON(x) "json(" x ")" 
 //==== (SQL_TYPE,DB_TYPE,C_TYPE,PLACE_HOLDER(?),READER(%s)) =============
@@ -278,7 +278,7 @@ extern void* ERROR_SQL_UNSUPPORTED_TYPE_PLEASE_USE_MANUAL_BIND(void);
     }
 ```
 With example code
-```
+```C
 #define READ_I64(out, field, row, col, values)                                                                         \
     out->field = values[col].i64;                                                                                      
 #define READ_I32(out, field, row, col, values)                                                                         \
@@ -295,7 +295,7 @@ SQL_BIND((), (device_t, "t_device", DEVICE_FIELDS))
 SQL_SELECT(device_get_by_sn, device_t,(device_t, "t_device", DEVICE_FIELDS), (1), (0, 2, 3), " LIMIT 1")
 ```
 Will get
-```
+```C
 
 typedef struct {
     SQL_C_I64   id;

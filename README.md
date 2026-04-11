@@ -1,9 +1,9 @@
 # x.h
-C macro tuples
-
+C macro tuples , dig and built with Gemini (free Tier 😃) , and coding by myself.
 # Usage
 Copy and parse below code into browser console or any js eval (not test with quickjs, but should work)
 ```js
+
 const A = (n, fn) => Array(n).fill(0).map((_, i) => fn(i)),V = "__VA_ARGS__", N = "\n", C = ",", H= "X_HDR",R= "X_REST",E = "", M = 32;
 ((typeof copy === 'function') ? (R) => { copy(R); console.log("✅ Done with copy"); } 
 : (navigator&&navigator.clipboard?.writeText) ? (R) => navigator.clipboard.writeText(R).then(() => console.log("✅ Done with navigator"))
@@ -25,7 +25,7 @@ const A = (n, fn) => Array(n).fill(0).map((_, i) => fn(i)),V = "__VA_ARGS__", N 
    `#define X_REST(a, ...) __VA_ARGS__`,
    `#define _X_CONCAT_INNER(a, b) a##b`,
    `#define X_CONCAT(a, b) _X_CONCAT_INNER(a, b)`,
-   A(M, i =>i<1?``:`#define X_APPLY${i==1?``:i}(${A(i,j=>`A`+j).join(C)},f) f(${A(i,j=>`A`+j).join(C)})`).join(N),
+   A(M, i =>i<1?``:`#define X_APPLY${i==1?``:`_${i}`}(${A(i,j=>`A`+j).join(C)},f) f(${A(i,j=>`A`+j).join(C)})`).join(N),
    ``,
    `#define _X_LIST_IDX ${A(M, i => i).join(C)}`,
    `#define _X_ARG_N(${A(M, i => `_` + i).join(C)}, N, ...) N`,
@@ -276,6 +276,132 @@ extern void* ERROR_SQL_UNSUPPORTED_TYPE_PLEASE_USE_MANUAL_BIND(void);
             (_MK_BIND_ACTION(out, X_TUPLE_AT(MODEL, 2), PICK_LIST);));                                                 \
         return rc;                                                                                                     \
     }
+```
+With example code
+```
+#define READ_I64(out, field, row, col, values)                                                                         \
+    out->field = values[col].i64;                                                                                      
+#define READ_I32(out, field, row, col, values)                                                                         \
+    out->field = values[col].i;                                                                                        
+#define READ_STR(out, field, row, col, values)                                                                         \                                                        out->field = strdup(values[col].text);                                                                             
+#define READ_JSONB(out, field, row, col, values)                                                                       \
+  out->field = strdup(values[col].text);                                                                             
+
+#define DEVICE_FIELDS                                                                                                  \
+    ((X_UNPACK SQL_F_ID64, READ_I64), (sn, "sn", X_UNPACK SQL_U_STR, false, READ_STR),                                 \
+        (power, "power", X_UNPACK SQL_U_I32, false, READ_I32),                                                         \
+        (extra, "extra", X_UNPACK SQL_U_JSONB, false, READ_JSONB))
+SQL_BIND((), (device_t, "t_device", DEVICE_FIELDS))
+SQL_SELECT(device_get_by_sn, device_t,(device_t, "t_device", DEVICE_FIELDS), (1), (0, 2, 3), " LIMIT 1")
+```
+Will get
+```
+
+typedef struct {
+    SQL_C_I64   id;
+    SQL_C_TEXT  sn;
+    SQL_C_I32   power;
+    SQL_C_JSONB extra;
+} device_t;
+typedef enum {
+    device_t_column_id    = 0,
+    device_t_column_sn    = 1,
+    device_t_column_power = 2,
+    device_t_column_extra = 3,
+} device_t_columns;
+const char* device_t_create_sql = "CREATE TABLE IF NOT EXISTS "
+                                  "t_device"
+                                  "("
+                                  "id"
+                                  " "
+                                  "INTEGER PRIMARY KEY"
+                                  ", "
+                                  "sn"
+                                  " "
+                                  "TEXT"
+                                  ", "
+                                  "power"
+                                  " "
+                                  "INTEGER"
+                                  ", "
+                                  "extra"
+                                  " "
+                                  "BLOB"
+                                  ");";
+
+static const char* device_get_by_sn_query_sql = "SELECT "
+                                                "id"
+                                                ", "
+                                                "power"
+                                                ", "
+                                                "json("
+                                                "extra"
+                                                ")"
+                                                " FROM "
+                                                "t_device"
+                                                " WHERE "
+                                                "sn"
+                                                " = "
+                                                "?"
+                                                " LIMIT 1";
+static inline int  device_get_by_sn(sql db, device_t* out, SQL_C_TEXT sn) {
+    static const sql_type device_get_by_sn_query_result_type[] = {
+        sql_type_int64,
+        sql_type_int,
+        sql_type_blob,
+    };
+    int rc = 0;
+    do {
+        sql_cursor cursor = sql_query(db, device_get_by_sn_query_sql, 1,
+             (sql_value[]){_Generic((sn),
+                    _Bool: (sql_value){.type = sql_type_int, .i = (int64_t)(sn)},
+                    int8_t: (sql_value){.type = sql_type_int, .i = (int64_t)(sn)},
+                    uint8_t: (sql_value){.type = sql_type_int, .i = (int64_t)(sn)},
+                    int16_t: (sql_value){.type = sql_type_int, .i = (int64_t)(sn)},
+                    uint16_t: (sql_value){.type = sql_type_int, .i = (int64_t)(sn)},
+                    int32_t: (sql_value){.type = sql_type_int, .i = (int64_t)(sn)},
+                    uint32_t: (sql_value){.type = sql_type_int64, .i64 = (int64_t)(sn)},
+                    int64_t: (sql_value){.type = sql_type_int64, .i64 = (int64_t)(sn)},
+                    uint64_t: (sql_value){.type = sql_type_int64, .i64 = (int64_t)(sn)},
+                    float: (sql_value){.type = sql_type_double, .f64 = (double)(uintptr_t)(sn)},
+                    double: (sql_value){.type = sql_type_double, .f64 = (double)(uintptr_t)(sn)},
+                    char*: (sql_value){.type = sql_type_text,
+                         .nil                 = sn == ((void*)0),
+                         .text                = (char*)(sn),
+                         .len32               = strlen(sn)},
+                    const char*: (sql_value){.type = sql_type_text,
+                         .nil                       = sn == ((void*)0),
+                         .text                      = (char*)(sn),
+                         .len32                     = strlen(sn)},
+                    unsigned char*: (sql_value){.type = sql_type_text,
+                         .nil                          = sn == ((void*)0),
+                         .text                         = (char*)(sn),
+                         .len32                        = strlen(sn)},
+                    const unsigned char*: (sql_value){.type = sql_type_text,
+                         .nil                                = sn == ((void*)0),
+                         .text                               = (char*)(sn),
+                         .len32                              = strlen(sn)},
+                    default: ((sql_value){
+                         .type = (uint32_t)(uintptr_t)ERROR_SQL_UNSUPPORTED_TYPE_PLEASE_USE_MANUAL_BIND()}))},
+             3, device_get_by_sn_query_result_type);
+        if (!cursor) {
+            log_log(LOG_ERROR, "src/test/msql.c", 35, "fetch cursor fail %s", sql_error(db));
+            return -1;
+        };
+        const sql_value* values = sql_cursor_next(cursor);
+        int              row    = 0;
+        while (values != ((void*)0)) {
+            out->id = values[0].i64;
+            out->power = values[1].i;
+            out->extra = strdup(values[2].text);
+            values = sql_cursor_next(cursor);
+            row++;
+        }
+        sql_cursor_close(cursor);
+    } while (0);
+    return rc;
+}
+
 ```
 # License
 MIT 

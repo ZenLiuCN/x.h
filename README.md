@@ -92,6 +92,8 @@ const A = (n, fn) => Array(n).fill(0).map((_, i) => fn(i)),V = "__VA_ARGS__", N 
 #define X_TUPLE_APPEND(TUPLE, ...) (X_UNPACK TUPLE, ##__VA_ARGS__)
 // prepend value to TUPLE (no element limits except the cc's limit)
 #define X_TUPLE_PREPEND(TUPLE, ...) (__VA_ARGS__, X_UNPACK TUPLE)
+// merge two TUPLE (no element limits except the cc's limit)
+#define X_TUPLE_MERGE(TUPLE0,TUPLE1) (X_UNPACK TUPLE0, X_UNPACK TUPLE1)
 // revrese element in TUPLE
 #define X_TUPLE_REVERSE(TUPLE) X_CONCAT(_X_TU_REV_, X_COUNT TUPLE) TUPLE
 // join element in TUPLE with ", "

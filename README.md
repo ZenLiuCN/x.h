@@ -8,29 +8,29 @@ const A = (n, fn) => Array(n).fill(0).map((_, i) => fn(i)),V = "__VA_ARGS__", N 
 ((typeof copy === 'function') ? (R) => { copy(R); console.log("✅ Done with copy"); } 
 : (navigator&&navigator.clipboard?.writeText) ? (R) => navigator.clipboard.writeText(R).then(() => console.log("✅ Done with navigator"))
 .catch(err => console.error("❌ Fail: ", err)) : (R) =>console.log(R))([
-`#ifndef H_X_H`,
-`#define H_X_H`,
-`#include <stdarg.h> // IWYU pragma: keep`,
-`// clang-format off`,
-`#define X_TUPLE(...) (__VA_ARGS__)`,
-`#define X_UNPACK(...) __VA_ARGS__`,
-`#define X_UNPACK_COMMA(...) ,##__VA_ARGS__`,
-`#define X_NEW(N, NEW, C)({ __typeof__(*(N))* _ptr = NEW(__typeof__(*(N))); if (_ptr) { *(_ptr) = (__typeof__(*(_ptr)))X_UNPACK C; } _ptr; })`,
-`#define X_ID(X) X`,
-`#define X_STR_EXP(x) #x`,
-`#define X_STR(x) X_STR_EXP(x)`,
-`#define X_EVAL(...) __VA_ARGS__`,
-`#define X_PACK(...) (__VA_ARGS__)`,
-`#define X_HDR(a, ...) a`,
-`#define X_REST(a, ...) __VA_ARGS__`,
-`#define _X_CONCAT(a, b) a##b`,
-`#define X_CONCAT(a, b) _X_CONCAT(a, b)`,
+`#ifndef H_X_H
+#define H_X_H
+#include <stdarg.h> // IWYU pragma: keep
+// clang-format off
+#define X_TUPLE(...) (__VA_ARGS__)
+#define X_UNPACK(...) __VA_ARGS__
+#define X_UNPACK_COMMA(...) ,##__VA_ARGS__
+#define X_NEW(N, NEW, C)({ __typeof__(*(N))* _ptr = NEW(__typeof__(*(N))); if (_ptr) { *(_ptr) = (__typeof__(*(_ptr)))X_UNPACK C; } _ptr; })
+#define X_ID(X) X
+#define X_STR_EXP(x) #x
+#define X_STR(x) X_STR_EXP(x)
+#define X_EVAL(...) __VA_ARGS__
+#define X_PACK(...) (__VA_ARGS__)
+#define X_HDR(a, ...) a
+#define X_REST(a, ...) __VA_ARGS__
+#define _X_CONCAT(a, b) a##b
+#define X_CONCAT(a, b) _X_CONCAT(a, b)
+#define _X_LIST_IDX ${A(M, i => i).join(C)}
+#define _X_ARG_N(${A(M, i => `_` + i).join(C)}, N, ...) N
+#define _X_COUNT_RAW(...) _X_ARG_N(${V}, ${A(M, i => M-i).join(C)},0)
+#define X_COUNT(...) _X_COUNT_RAW(0__VAR_OPT__(,)${V})
+`,
 A(M, i =>i<1?``:`#define X_APPLY${i==1?``:`_${i}`}(${A(i,j=>`A`+j).join(C)},f) f(${A(i,j=>`A`+j).join(C)})`).join(N),
-``,
-`#define _X_LIST_IDX ${A(M, i => i).join(C)}`,
-`#define _X_ARG_N(${A(M, i => `_` + i).join(C)}, N, ...) N`,
-`#define _X_COUNT_RAW(...) _X_ARG_N(${V}, ${A(M, i => M-i).join(C)},0)`,
-`#define X_COUNT(...) _X_COUNT_RAW(0__VAR_OPT__(,)${V})`,
 A(M + 1, i => `#define _X_MAP_STEP_${i}(M, ...) ${i>0?`X_APPLY(${H}(${V}),M)`:E} ${i > 1 ? `_X_MAP_STEP_${i-1}(M, ${R}(${V}))` : E}`).join(N),
 A(M + 1, i => `#define _X_MAP_IDX_STEP_${i}(M,LI, ...) ${i>0?`X_APPLY_2( ${H} LI,${H}(${V}),M)`:E} ${i > 1 ? `_X_MAP_IDX_STEP_${i-1}(M , (${R} LI) , ${R}(${V}))` : E}`).join(N),
 A(M + 1, i => `#define _X_MAP_ARG_STEP_${i}(M,ARG, ...) ${i>0?`X_APPLY_2(ARG,${H}(${V}),M)`:E} ${i > 1 ? `_X_MAP_ARG_STEP_${i-1}(M ,ARG , ${R}(${V}))` : E}`).join(N),
@@ -49,6 +49,9 @@ A(M + 1, i => `#define _X_TU_MAP_ARG_STEP_${i}(M,ARG, ...) ${i>0?`X_APPLY_2(ARG,
 A(M + 1, i => `#define _X_TU_MAP_IDX_STEP_${i}(M,LI, ...) ${i>0?`X_APPLY_2(${H} LI,${H}(${V}), M)`:E}${i > 1 ? ` , _X_TU_MAP_IDX_STEP_${i-1}(M , (${R} LI) , ${R}(${V}))` : E}`).join(N),
 A(M + 1, i => `#define _X_TU_MAP_ARG_IDX_STEP_${i}(M,ARG,LI, ...) ${i>0?`X_APPLY_3(ARG, ${H} LI,${H}(${V}),M)`:E}${i > 1 ? ` , _X_TU_MAP_ARG_IDX_STEP_${i-1}(M ,ARG, (${R} LI) , ${R}(${V}))` : E}`).join(N),
 A(M + 1, i =>`#define _X_TU_PICK_IDX_${i}(FIELDS, ...) ${i>0?`X_TUPLE_AT(FIELDS,${H}(${V}))`:E} ${i > 1 ? `, _X_TU_PICK_IDX_${i-1}(FIELDS, ${R}(${V}))` : E}`).join(N),
+A(M, i => i < 3 ? E : `#define _X_CAT_${i}(${A(i, j=>`A`+j).join(C)}) ${A(i, j=>`A`+j).join("##")}`).filter(sNM).join(N),
+A(M, i => i < 3 ? E : `#define X_CONCAT_${i}(${A(i, j=>`A`+j).join(C)}) _X_CAT_${i}(${A(i, j=>`A`+j).join(C)})`).filter(sNM).join(N),
+`// clang-format on
 // expand max to ${M} varidc args of X micro to apply
 #define X_EACH(M, ...) X_CONCAT(_X_STEP_, X_COUNT(__VA_ARGS__))(M, __VA_ARGS__)
 // expand max to ${M} va_args of X micro to apply with one extra arg
@@ -96,15 +99,13 @@ A(M + 1, i =>`#define _X_TU_PICK_IDX_${i}(FIELDS, ...) ${i>0?`X_TUPLE_AT(FIELDS,
 // revrese element in TUPLE
 #define X_TUPLE_REVERSE(TUPLE) X_CONCAT(_X_TU_REV_, X_COUNT TUPLE) TUPLE
 // join element in TUPLE with ", "
-#define X_TUPLE_JOIN(TUPLE) X_JOIN(", ", X_UNPACK TUPLE)
+#define X_TUPLE_JOIN_S(TUPLE) X_JOIN(", ", X_UNPACK TUPLE)
 // join element in TUPLE max to ${M} element
-#define X_TUPLE_JOINS(TUPLE, SEP) X_JOIN(SEP, X_UNPACK TUPLE)
+#define X_TUPLE_JOIN(TUPLE, SEP) X_JOIN(SEP, X_UNPACK TUPLE)
 //pick element in TUPLE with indexes max to ${M} element
 #define X_TUPLE_PICK(FIELDS, ...) (X_CONCAT(_X_TU_PICK_IDX_, X_COUNT(__VA_ARGS__))(FIELDS, __VA_ARGS__))
 #define X_COMMA ,
 #define X_SEMI ;
-${A(M, i => i < 3 ? E : `#define _X_CAT_${i}(${A(i, j=>`A`+j).join(C)}) ${A(i, j=>`A`+j).join("##")}`).filter(sNM).join(N)}
-${A(M, i => i < 3 ? E : `#define X_CONCAT_${i}(${A(i, j=>`A`+j).join(C)}) _X_CAT_${i}(${A(i, j=>`A`+j).join(C)})`).filter(sNM).join(N)}
 #define X_CONCATS(a,b,c,...) X_EVAL(X_CONCAT(X_CONCAT_, X_COUNT(a, b, c, ##__VA_ARGS__))(a, b, c, ##__VA_ARGS__))
 #define X_PROBE(...)  ~, 1
 #define _X_CHECK(...) X_TUPLE_AT((__VA_ARGS__), 1)
@@ -114,8 +115,7 @@ ${A(M, i => i < 3 ? E : `#define X_CONCAT_${i}(${A(i, j=>`A`+j).join(C)}) _X_CAT
 #define X_IF(cond, t, f) X_EVAL(X_CONCAT(_X_IF_, cond)(t, f))
 //check if A eq B, user should define _X_EQ_A_B X_PROBE();
 #define X_IS_EQ(A, B) _X_CHECK(X_CONCAT_4(_X_EQ_, A, _, B), 0)
-// clang-format on
-#endif //H_X_H`,
+#endif // H_X_H`,
  ].join(N));
  ```
 the copy the output, or just to parse in header file.
@@ -151,9 +151,7 @@ inspired when coding a little project.
     X(T, HOLDER, 3)                                                                                                    \
     X(T, READER, 4)
 
-X_ENUM_SN(SQL_FU, -1, SQL_FIELD_TUPLE_X);
-
-// BIND= NAME(out,row,value)
+// BIND= NAME(out, field, row, col, values)
 #define SQL_FIELD_DEFINE_TUPLE_X(X, T)                                                                                 \
     X(T, FIELD, 0)                                                                                                     \
     X(T, DB_NAME, 1)                                                                                                   \
@@ -165,15 +163,10 @@ X_ENUM_SN(SQL_FU, -1, SQL_FIELD_TUPLE_X);
     X(T, MK_ID, 7)                                                                                                     \
     X(T, BIND, 8)
 
-X_ENUM_SN(SQL_FD, -1, SQL_FIELD_DEFINE_TUPLE_X);
-
-
 #define SQL_MODEL_DEFINE_TUPLE_X(X, T)                                                                                 \
     X(T, STRUCT, 0)                                                                                                    \
     X(T, TABLE_NAME, 1)                                                                                                \
     X(T, FIEDLS, 2)
-
-X_ENUM_SN(SQL_MODEL, -1, SQL_MODEL_DEFINE_TUPLE_X);
 
 #define _SQL_FIELD_(TYPE_NAME, FD) X_TUPLE_AT(FD, 4) X_TUPLE_AT(FD, 0);
 
@@ -181,40 +174,16 @@ X_ENUM_SN(SQL_MODEL, -1, SQL_MODEL_DEFINE_TUPLE_X);
 
 #define _SQL_FIELD_INDEX_(TYPE_NAME, N, FD) X_CONCAT(TYPE_NAME##_column_, X_EVAL(X_TUPLE_AT(FD, 0))) = N,
 
-/* --------------------------------------------------------------------------
- * @brief build struct define
- * @param TYPE_NAME: the type name
- * @param DB_TABLE_NAME: the table name
- * @param ASSOC_CREATE: extra creation SQL, eg FTS vitrual table and triggers
- * @param va_args: field tuples
- * (FIELD_NAME,DB_NAME_STR,SQL_TYPE,DB_MODIFIER,C_TYPE,PLACE_HOLDER,READER,BIND_CODE,ID,extra...)
- * -------------------------------------------------------------------------- */
 #define SQL_BIND(ASSOC_CREATE, MODEL)                                                                                  \
     typedef struct {                                                                                                   \
-        X_TUPLE_JOINS(X_TUPLE_MAP_ARG(X_TUPLE_AT(MODEL, 2), X_TUPLE_AT(MODEL, 0), _SQL_FIELD_), )                      \
+        X_TUPLE_JOIN(X_TUPLE_MAP_ARG(X_TUPLE_AT(MODEL, 2), X_TUPLE_AT(MODEL, 0), _SQL_FIELD_), )                      \
     } X_TUPLE_AT(MODEL, 0);                                                                                            \
     typedef enum {                                                                                                     \
         X_MAP_ARG_IDX(_SQL_FIELD_INDEX_, X_TUPLE_AT(MODEL, 0), X_UNPACK X_TUPLE_AT(MODEL, 2))                          \
     } X_CONCAT(X_TUPLE_AT(MODEL, 0), _columns);                                                                        \
     const char* X_CONCAT(X_TUPLE_AT(MODEL, 0), _create_sql) =                                                          \
-        "CREATE TABLE IF NOT EXISTS " X_TUPLE_AT(MODEL, 1) "(" X_TUPLE_JOIN(X_TUPLE_MAP_ARG_IDX(                       \
+        "CREATE TABLE IF NOT EXISTS " X_TUPLE_AT(MODEL, 1) "(" X_TUPLE_JOIN_S(X_TUPLE_MAP_ARG_IDX(                       \
             X_TUPLE_AT(MODEL, 2), X_TUPLE_AT(MODEL, 0), _SQL_COLUMN_DEF_)) ");" X_UNPACK ASSOC_CREATE;
-
-
-/* --------------------------------------------------------------------------
- * @brief build query
- * @param DB: the sql
- * @param out: the structure pointer to recive
- * @param DB_TABLE_NAME: the table name
- * @param FIELDS: field tuples
- * (FIELD_NAME,DB_NAME_STR,SQL_TYPE,DB_MODIFIER,C_TYPE,PLACE_HOLDER,READER,BIND,extra...)[]
- * BIND should be as BINDER(out_ptr, field, row, col, values)
- * BIND_CODE is an macro of (out_ptr)=>bind_code
- * @param PARAM_LIST: tuple of param fields index
- * @param PICK_LIST: tuple of result fields index
- *
- * -------------------------------------------------------------------------- */
-
 
 #define _APPLY_FUNC(FUNC, COL_NAME) FUNC(COL_NAME)
 
@@ -225,15 +194,15 @@ X_ENUM_SN(SQL_MODEL, -1, SQL_MODEL_DEFINE_TUPLE_X);
 #define _SQL_SELECT_COL(FIELD) X_TUPLE_AT(FIELD, 6)(X_TUPLE_AT(FIELD, 1))
 
 #define _MK_QUERY(TABLE, FIELDS, PARAM_LIST, PICK_LIST)                                                                \
-    "SELECT " X_TUPLE_JOIN(                                                                                            \
+    "SELECT " X_TUPLE_JOIN_S(                                                                                            \
         X_TUPLE_MAP(X_TUPLE_PICK(FIELDS, X_UNPACK PICK_LIST), _SQL_SELECT_COL))                                         \
          " FROM " TABLE " WHERE "                                                                                     \
-         X_TUPLE_JOINS(X_TUPLE_MAP(X_TUPLE_PICK(FIELDS, X_UNPACK PARAM_LIST),_SQL_COL_EQ_PARAM)," AND ")
+         X_TUPLE_JOIN(X_TUPLE_MAP(X_TUPLE_PICK(FIELDS, X_UNPACK PARAM_LIST),_SQL_COL_EQ_PARAM)," AND ")
 
 #define _SQL_PARAM_DECL(FIELD) X_TUPLE_AT(FIELD, 4) X_TUPLE_AT(FIELD, 0)
 
 #define _MK_PARAMS(FIELDS, PARAM_LIST)                                                                                 \
-    X_TUPLE_JOINS(X_TUPLE_MAP(X_TUPLE_PICK(FIELDS, X_UNPACK PARAM_LIST), _SQL_PARAM_DECL), )
+    X_TUPLE_JOIN(X_TUPLE_MAP(X_TUPLE_PICK(FIELDS, X_UNPACK PARAM_LIST), _SQL_PARAM_DECL), )
 
 #define _SQL_TYPE_VAL(FIELD) X_CONCAT(sql_type_, X_TUPLE_AT(FIELD, 2)),
 
@@ -262,20 +231,10 @@ extern void* ERROR_SQL_UNSUPPORTED_TYPE_PLEASE_USE_MANUAL_BIND(void);
         default: ((sql_value){.type = (uint32_t)(uintptr_t)ERROR_SQL_UNSUPPORTED_TYPE_PLEASE_USE_MANUAL_BIND()}))
 #define _SQL_ARG_VAL(FIELD) _SQL_PARAMS(X_TUPLE_AT(FIELD, 0))
 #define _MK_ARGS(FIELDS, PARAM_LIST)                                                                                   \
-    (sql_value[]) { X_UNPACK X_TUPLE_MAP(X_TUPLE_PICK(FIELDS, X_UNPACK PARAM_LIST), _SQL_ARG_VAL) }
+    (sql_value[]) { X_EVAL(X_UNPACK X_TUPLE_MAP(X_TUPLE_PICK(FIELDS, X_UNPACK PARAM_LIST), _SQL_ARG_VAL)) }
 #define _SQL_BIND_VAL(OUT, N, FIELD) X_TUPLE_AT(FIELD, 8)(OUT, X_TUPLE_AT(FIELD, 0), row, N, values)
 #define _MK_BIND_ACTION(OUT_PTR, FIELDS, PICK_LIST)                                                                    \
-    X_TUPLE_JOINS(X_TUPLE_MAP_ARG_IDX(X_TUPLE_PICK(FIELDS, X_UNPACK PICK_LIST), OUT_PTR, _SQL_BIND_VAL), X_SEMI)
-/* --------------------------------------------------------------------------
- * @brief auto select builder
- * @param QUERY_NAME the function name
- * @param OUT_TYPE the result holder type
- * @param MODEL TUPLE of SQL MODEL
- * @param PARAM_LIST TUPLE of parameter indexes (only for simple equal)
- * @param PICK_LIST TUPLE of result indexes
- * @param EXTRA_QUERY text for query suffix parts
- * @Note: only support for simple types as parameter, text must end with '\0'
- * -------------------------------------------------------------------------- */
+    X_TUPLE_JOIN(X_TUPLE_MAP_ARG_IDX(X_TUPLE_PICK(FIELDS, X_UNPACK PICK_LIST), OUT_PTR, _SQL_BIND_VAL), X_SEMI)
 
 #define SQL_SELECT(QUERY_NAME, OUT_TYPE, MODEL, PARAM_LIST, PICK_LIST, EXTRA_QUERY)                                    \
     static const char* QUERY_NAME##_query_sql =                                                                        \

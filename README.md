@@ -146,11 +146,11 @@ A(M, i => i < 3 ? E : `#define X_CONCAT_${i}(${A(i, j=>`A`+j).join(C)}) _X_CAT_$
 #endif
 // varargs is empty or not
 #define X_TEST_EMPTY(ON_EMPTY, ON_ELSE, ...) X_VEC_AT((X_CONCAT(X_TEST_, X_LEN(__VA_ARGS__)) ON_EMPTY, ON_ELSE), 1)
-// test TEST match, should define a `X_TEST_target`
+// test TEST match, should define a 'X_TEST_target'
 #define X_TEST_CASE(TEST, ON_MATCH, ON_ELSE) X_VEC_AT((X_CONCAT(X_TEST_, TEST) ON_MATCH, ON_ELSE), 1)
-// TEST==target?TEST:ON_ELSE. Should define a `X_TEST_target`
+// TEST==target?TEST:ON_ELSE. Should define a 'X_TEST_target'
 #define X_TEST_NOT(TEST, ON_ELSE) X_VEC_AT((X_CONCAT(X_TEST_, TEST) TEST, ON_ELSE), 1)
-// TEST!=target?TEST:ON_MATCH. Should define a `X_TEST_target`
+// TEST!=target?TEST:ON_MATCH. Should define a 'X_TEST_target'
 #define X_TEST_IS(TEST, ON_MATCH) X_VEC_AT((X_CONCAT(X_TEST_, TEST) ON_MATCH, TEST), 1)
 
 #define X_PROB_EMPTY(PROB, ON_EMPTY, ON_ELSE, ...) X_VEC_AT((X_CONCAT(PROB, X_LEN(__VA_ARGS__)) ON_EMPTY, ON_ELSE), 1)

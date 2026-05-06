@@ -10,13 +10,17 @@ const A = (n, fn) => Array(n).fill(0).map((_, i) => fn(i)),V = "__VA_ARGS__", N 
 .catch(err => console.error("❌ Fail: ", err)) : (R) =>console.log(R))([
 `#ifndef H_X_H
 #define H_X_H
-#define X_VERSION 0.1.0
 #include <stdarg.h> // IWYU pragma: keep
 // clang-format off
+#define X_NEW(N, NEW, C)({ __typeof__(*(N))* _ptr = NEW(__typeof__(*(N))); if (_ptr) { *(_ptr) = (__typeof__(*(_ptr)))X_UNPACK C; } _ptr; })
+#define X_ASSIGN(P, C) *(P) = (__typeof__(*(P)))X_UNPACK C
 #define X_VEC(...) (__VA_ARGS__)
 #define X_UNPACK(...) __VA_ARGS__
+#if defined(__clang_analyzer__) || defined(__clang__)
+#define X_UNPACK_COMMA(...) __VA_OPT__(,) __VA_ARGS__
+#else
 #define X_UNPACK_COMMA(...) ,##__VA_ARGS__
-#define X_NEW(N, NEW, C)({ __typeof__(*(N))* _ptr = NEW(__typeof__(*(N))); if (_ptr) { *(_ptr) = (__typeof__(*(_ptr)))X_UNPACK C; } _ptr; })
+#endif
 #define X_ID(X) X
 #define X_STR_EXP(x) #x
 #define X_STR(x) X_STR_EXP(x)
@@ -29,7 +33,7 @@ const A = (n, fn) => Array(n).fill(0).map((_, i) => fn(i)),V = "__VA_ARGS__", N 
 #define _X_ARG_N(${A(M, i => `_` + i).join(C)}, N, ...) N
 #define _X_LEN_RAW(...) _X_ARG_N(${V}, ${A(M, i => M-i).join(C)},0)
 #define X_LEN(...) _X_LEN_RAW(0__VAR_OPT__(,)${V})
-
+#define X_VEC_APPLY(f,A) f A
 // apply a function to arguments
 `,
 A(M, i =>i<1?``:`#define X_APPLY${i==1?``:`_${i}`}(f,${A(i,j=>`A`+j).join(C)}) f(${A(i,j=>`A`+j).join(C)})`).filter(sNM).join(N),
@@ -52,6 +56,8 @@ A(M + 1, i => `#define _X_V_MAP_ARG_STEP_${i}(M,ARG, ...) ${i>0?`X_APPLY_2(M,ARG
 A(M + 1, i => `#define _X_V_MAP_IDX_STEP_${i}(M,LI, ...) ${i>0?`X_APPLY_2(M,${H} LI,${H}(${V}))`:E}${i > 1 ? ` , _X_V_MAP_IDX_STEP_${i-1}(M , (${R} LI) , ${R}(${V}))` : E}`).join(N),
 A(M + 1, i => `#define _X_V_MAP_ARG_IDX_STEP_${i}(M,ARG,LI, ...) ${i>0?`X_APPLY_3(M,ARG, ${H} LI,${H}(${V}))`:E}${i > 1 ? ` , _X_V_MAP_ARG_IDX_STEP_${i-1}(M ,ARG, (${R} LI) , ${R}(${V}))` : E}`).join(N),
 A(M + 1, i =>`#define _X_V_PICK_IDX_${i}(U, ...) ${i>0?`X_VEC_AT(U,${H}(${V}))`:E} ${i > 1 ? `, _X_V_PICK_IDX_${i-1}(U, ${R}(${V}))` : E}`).join(N),
+A(M + 1, i =>i < 1 ? E: `#define _X_V_TAIL_${i}(${A(i, j => `a${j}`).join(C)}) a${i-1}`).join(N),
+A(M + 1, i => i < 1 ? E : `#define _X_V_TAILER_${i}(${A(i, j => `a${j}`).join(C)}) ((${A(i-1, j => `a${j}`).join(C)}), a${i-1})`).join(N),
 A(M, i => i < 3 ? E : `#define _X_CAT_${i}(${A(i, j=>`A`+j).join(C)}) ${A(i, j=>`A`+j).join("##")}`).filter(sNM).join(N),
 A(M, i => i < 3 ? E : `#define X_CONCAT_${i}(${A(i, j=>`A`+j).join(C)}) _X_CAT_${i}(${A(i, j=>`A`+j).join(C)})`).filter(sNM).join(N),
 `
@@ -104,8 +110,12 @@ A(M, i => i < 3 ? E : `#define X_CONCAT_${i}(${A(i, j=>`A`+j).join(C)}) _X_CAT_$
 #define X_VEC_PREPEND(VEC, ...) (__VA_ARGS__, X_UNPACK VEC)
 // merge two VEC (no element limits except the cc's limit)
 #define X_VEC_MERGE(VEC0,VEC1) (X_UNPACK VEC0, X_UNPACK VEC1)
-// revrese element in VEC
+// reverse element in VEC
 #define X_VEC_REVERSE(VEC) X_CONCAT(_X_V_REV_, X_LEN VEC) VEC
+// split element in VEC to ((1,...N-1),N) 
+#define X_VEC_TAILER(VEC) X_CONCAT(_X_V_TAILER_, X_LEN VEC) VEC
+// get last element in VEC
+#define X_VEC_TAIL(VEC) X_CONCAT(_X_V_TAIL_, X_LEN VEC) VEC
 // join element in VEC with ", "
 #define X_VEC_JOIN_S(VEC) X_JOIN(", ", X_UNPACK VEC)
 // join element in VEC max to ${M} element
@@ -123,6 +133,32 @@ A(M, i => i < 3 ? E : `#define X_CONCAT_${i}(${A(i, j=>`A`+j).join(C)}) _X_CAT_$
 #define X_IF(cond, t, f) X_EVAL(X_CONCAT(_X_IF_, cond)(t, f))
 //check if A eq B, user should define _X_EQ_A_B X_PROBE();
 #define X_IS_EQ(A, B) _X_CHECK(X_CONCAT_4(_X_EQ_, A, _, B), 0)
+#define X_IS_VEC(A) _X_CHECK(X_PROBE A, 0)
+#define X_VEC_ID(A) X_IF(X_IS_VEC(A), A, (A))
+
+
+#if defined(__clang_analyzer__) || defined(__clang__)
+// varargs fisrt value or the DEF
+#define X_VA_FST(DEF, ...) X_VEC_AT((DUMMY __VA_OPT__(, ) __VA_ARGS__, DEF), 1)
+#else
+// varargs fisrt value or the DEF
+#define X_VA_FST(DEF, ...) X_VEC_AT((DUMMY, ##__VA_ARGS__, DEF), 1)
+#endif
+// varargs is empty or not
+#define X_TEST_EMPTY(ON_EMPTY, ON_ELSE, ...) X_VEC_AT((X_CONCAT(X_TEST_, X_LEN(__VA_ARGS__)) ON_EMPTY, ON_ELSE), 1)
+// test TEST match, should define a `X_TEST_target`
+#define X_TEST_CASE(TEST, ON_MATCH, ON_ELSE) X_VEC_AT((X_CONCAT(X_TEST_, TEST) ON_MATCH, ON_ELSE), 1)
+// TEST==target?TEST:ON_ELSE. Should define a `X_TEST_target`
+#define X_TEST_NOT(TEST, ON_ELSE) X_VEC_AT((X_CONCAT(X_TEST_, TEST) TEST, ON_ELSE), 1)
+// TEST!=target?TEST:ON_MATCH. Should define a `X_TEST_target`
+#define X_TEST_IS(TEST, ON_MATCH) X_VEC_AT((X_CONCAT(X_TEST_, TEST) ON_MATCH, TEST), 1)
+
+#define X_PROB_EMPTY(PROB, ON_EMPTY, ON_ELSE, ...) X_VEC_AT((X_CONCAT(PROB, X_LEN(__VA_ARGS__)) ON_EMPTY, ON_ELSE), 1)
+#define X_PROB_CASE(PROB, TEST, ON_MATCH, ON_ELSE) X_VEC_AT((X_CONCAT(PROB, TEST) ON_MATCH, ON_ELSE), 1)
+#define X_PROB_NOT(PROB, TEST, ON_ELSE) X_VEC_AT((X_CONCAT(PROB, TEST) TEST, ON_ELSE), 1)
+#define X_PROB_IS(PROB, TEST, ON_MATCH) X_VEC_AT((X_CONCAT(PROB, TEST) ON_MATCH, TEST), 1)
+
+#define X_TEST_0 ~,
 
 #endif // H_X_H`,
  ].join(N));
